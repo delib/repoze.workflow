@@ -21,18 +21,22 @@ class WorkflowTests(unittest.TestCase):
         tdata['publish'] =  dict(name='publish',
                                  from_state='pending',
                                  to_state='published',
+                                 guards=(),
                                  callback=transition_callback)
         tdata['reject'] = dict(name='reject',
                                from_state='pending',
                                to_state='private',
+                               guards=(),
                                callback=transition_callback)
         tdata['retract'] = dict(name='retract',
                                 from_state='published',
                                 to_state='pending',
+                                guards=(),
                                 callback=transition_callback)
         tdata['submit'] = dict(name='submit',
                                from_state='private',
                                to_state='pending',
+                               guards=(),
                                callback=transition_callback)
         return sm
 
@@ -46,6 +50,7 @@ class WorkflowTests(unittest.TestCase):
             name='submit2',
             from_state='private',
             to_state='pending',
+            guards=(),
             callback=transition_callback,
             )
         return sm
@@ -314,6 +319,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'pending',
                                            'callback': dummy,
                                            'to_state': 'published',
+                                           'guards': (),
                                            'name': 'publish'})
         self.assertEqual(info.workflow, sm)
         self.assertEqual(args[1][0], ob)
@@ -321,6 +327,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'published',
                                            'callback': dummy,
                                            'to_state': 'pending',
+                                           'guards': (),
                                            'name': 'retract'})
         self.assertEqual(args[1][0], ob)
         self.assertEqual(args[2][0], ob)
@@ -328,6 +335,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'pending',
                                            'callback': dummy,
                                            'to_state': 'private',
+                                           'guards': (),
                                            'name': 'reject'})
         self.assertEqual(info.workflow, sm)
         self.assertEqual(args[3][0], ob)
@@ -335,6 +343,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'private',
                                            'callback': dummy,
                                            'to_state': 'pending',
+                                           'guards': (),
                                            'name': 'submit'})
         self.assertEqual(info.workflow, sm)
 
@@ -351,6 +360,7 @@ class WorkflowTests(unittest.TestCase):
                           'callback': None,
                           'to_state':
                           'published',
+                          'guards': (),
                           'name': 'publish'})
         self.assertEqual(ob.info.workflow, sm)
 
@@ -361,7 +371,7 @@ class WorkflowTests(unittest.TestCase):
         from repoze.workflow import WorkflowError
         self.assertRaises(WorkflowError, sm._transition, ob, 'nosuch')
 
-    def test__transition_guard(self):
+    def test__transition_explicit_guard(self):
         def guard(content, info):
             raise ValueError
         sm = self._makePopulated()
@@ -369,6 +379,16 @@ class WorkflowTests(unittest.TestCase):
         ob.state = 'pending'
         self.assertRaises(ValueError, sm._transition, ob,
                           'publish', None, None, (guard,))
+
+    def test__transition_implicit_guard(self):
+        def guard(content, info):
+            raise ValueError
+        sm = self._makePopulated()
+        sm._transition_data['publish']['guards'] = (guard, )
+        ob = DummyContent()
+        ob.state = 'pending'
+        self.assertRaises(ValueError, sm._transition, ob,
+                          'publish', None, None, ())
 
     def test__transition_to_state(self):
         args = []
@@ -391,6 +411,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'pending',
                                            'callback': dummy,
                                            'to_state': 'published',
+                                           'guards': (),
                                            'name': 'publish'})
         self.assertEqual(info.workflow, sm)
         self.assertEqual(args[1][0], ob)
@@ -398,6 +419,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'published',
                                            'callback': dummy,
                                            'to_state': 'pending',
+                                           'guards': (),
                                            'name': 'retract'})
         self.assertEqual(info.workflow, sm)
         self.assertEqual(args[2][0], ob)
@@ -405,6 +427,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'pending',
                                            'callback': dummy,
                                            'to_state': 'private',
+                                           'guards': (),
                                            'name': 'reject'})
         self.assertEqual(info.workflow, sm)
         self.assertEqual(args[3][0], ob)
@@ -412,6 +435,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(info.transition, {'from_state': 'private',
                                            'callback': dummy,
                                            'to_state': 'pending',
+                                           'guards': (),
                                            'name': 'submit'})
         self.assertEqual(info.workflow, sm)
 

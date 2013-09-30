@@ -276,12 +276,22 @@ class Workflow(object):
         transitions = self._get_transitions(content, from_state)
         L = []
         for transition in transitions:
+            info = CallbackInfo(self, transition, request=request)
+            
             permission = transition.get('permission')
             if permission is not None:
                 if self.permission_checker:
                     if not self.permission_checker(permission, context, 
                                                    request):
                         continue
+            try:
+                guards = transition['guards']
+                if guards:
+                    for guard in guards:
+                        guard(context, info)
+            except WorkflowError:
+                continue
+            
             L.append(transition)
         return L
 
